@@ -1,0 +1,695 @@
+page 1 (
+    name: Dashboard
+    alias: DASHBOARD
+    title: Dashboard
+    appearance {
+        pageTemplate: @/standard
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        formAutoComplete: false
+    }
+    css {
+        inline:
+            ```css
+            .t-Header-logo-link::after{content:"Project Tracker";font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.5px;vertical-align:middle;padding-left:4px}
+            .t-MetricCards-item:nth-child(1) .t-MetricCard{border-left:6px solid #1565C0;background:linear-gradient(135deg,#EBF5FB 0%,#fff 100%)}
+            .t-MetricCards-item:nth-child(1) .t-MetricCard-metric{color:#1565C0}
+            .t-MetricCards-item:nth-child(2) .t-MetricCard{border-left:6px solid #2E7D32;background:linear-gradient(135deg,#E8F5E9 0%,#fff 100%)}
+            .t-MetricCards-item:nth-child(2) .t-MetricCard-metric{color:#2E7D32}
+            .t-MetricCards-item:nth-child(3) .t-MetricCard{border-left:6px solid #C62828;background:linear-gradient(135deg,#FFEBEE 0%,#fff 100%)}
+            .t-MetricCards-item:nth-child(3) .t-MetricCard-metric{color:#C62828}
+            .t-MetricCards-item:nth-child(4) .t-MetricCard{border-left:6px solid #6A1B9A;background:linear-gradient(135deg,#F3E5F5 0%,#fff 100%)}
+            .t-MetricCards-item:nth-child(4) .t-MetricCard-metric{color:#6A1B9A}
+            .t-MetricCard{min-height:110px}
+            .t-MetricCard-metric{font-size:3rem!important;font-weight:800!important;line-height:1.1}
+            .t-MetricCard-title{font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#555}
+            .t-MetricCard-meta{font-size:.78rem;margin-top:6px;color:#888}
+            ```
+    }
+
+    region Dashboard (
+        name: Dashboard
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region project-kpis (
+        name: Project KPIs
+        type: themeTemplateComponent/metricCard
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select 1 as id,
+                       'Active Projects' as title,
+                       to_char(count(*)) as metric,
+                       'currently active' as meta
+                from pt_projects
+                where status = 'ACTIVE' and is_archived = 'N'
+                union all
+                select 2,
+                       'Open Tasks',
+                       to_char(count(*)),
+                       'todo or in progress'
+                from pt_tasks
+                where status in ('TODO','IN_PROGRESS')
+                union all
+                select 3,
+                       'Blocked Tasks',
+                       to_char(count(*)),
+                       'need attention'
+                from pt_tasks
+                where status = 'BLOCKED'
+                union all
+                select 4,
+                       'Active Members',
+                       to_char(count(*)),
+                       'on the team'
+                from pt_team_members
+                where is_active = 'Y'
+                ```
+        }
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            display: report
+        }
+        settings {
+            title: &TITLE.
+            metric: &METRIC.
+            meta: &META.
+            layout: 4Columns
+        }
+
+        column ID (
+            layout {
+                sequence: 10
+            }
+            source {
+                databaseColumn: ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column TITLE (
+            layout {
+                sequence: 20
+            }
+            source {
+                databaseColumn: TITLE
+                dataType: varchar2
+            }
+        )
+
+        column METRIC (
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: METRIC
+                dataType: varchar2
+            }
+        )
+
+        column META (
+            layout {
+                sequence: 40
+            }
+            source {
+                databaseColumn: META
+                dataType: varchar2
+            }
+        )
+
+    )
+
+    region tasks-by-status (
+        name: Tasks by Status
+        type: chart
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        chart {
+            type: bar
+        }
+        legend {
+            show: false
+        }
+
+        series tasks-status-series (
+            name: Tasks
+            execution {
+                sequence: 10
+            }
+            source {
+                location: localDatabase
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select status as label, count(*) as value
+                    from pt_tasks
+                    group by status
+                    order by count(*) desc
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        axis x (
+            name: x
+            value {
+            }
+            majorTicks {
+                show: false
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+                formatScaling: none
+            }
+            majorTicks {
+                show: true
+            }
+        )
+
+    )
+
+    region projects-by-status (
+        name: Projects by Status
+        type: chart
+        layout {
+            sequence: 25
+            slot: body
+            startNewRow: false
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        chart {
+            type: pie
+        }
+        legend {
+            show: true
+        }
+
+        series projects-status-series (
+            name: Projects
+            execution {
+                sequence: 10
+            }
+            source {
+                location: localDatabase
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select status as label, count(*) as value
+                    from pt_projects
+                    where is_archived = 'N'
+                    group by status
+                    order by count(*) desc
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+    )
+
+    region project-timeline (
+        name: Project Timeline (Gantt)
+        type: chart
+        layout {
+            sequence: 27
+            slot: body
+            startNewRow: true
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        chart {
+            type: bar
+        }
+        legend {
+            show: true
+        }
+
+        series elapsed-days (
+            name: Elapsed Days
+            execution {
+                sequence: 10
+            }
+            source {
+                location: localDatabase
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select project_name as label,
+                           greatest(0, trunc(sysdate - start_date)) as value
+                    from pt_projects
+                    where is_archived = 'N'
+                      and start_date is not null
+                      and target_end_date is not null
+                    order by start_date
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        series remaining-days (
+            name: Days Remaining
+            execution {
+                sequence: 20
+            }
+            source {
+                location: localDatabase
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    select project_name as label,
+                           greatest(0, trunc(target_end_date - sysdate)) as value
+                    from pt_projects
+                    where is_archived = 'N'
+                      and start_date is not null
+                      and target_end_date is not null
+                    order by start_date
+                    ```
+            }
+            columnMapping {
+                label: LABEL
+                value: VALUE
+            }
+        )
+
+        axis x (
+            name: x
+            value {
+                format: decimal
+                decimalPlaces: 0
+                formatScaling: none
+            }
+            majorTicks {
+                show: true
+            }
+        )
+
+        axis y (
+            name: y
+            value {
+            }
+            majorTicks {
+                show: false
+            }
+        )
+
+    )
+
+    region projects-overview (
+        name: Projects Overview
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    p.project_code,
+                    p.project_name,
+                    m.first_name || ' ' || m.last_name as owner_name,
+                    p.status,
+                    case p.status
+                        when 'ACTIVE'    then '#4CAF50'
+                        when 'PLANNING'  then '#2196F3'
+                        when 'ON_HOLD'   then '#FF9800'
+                        when 'COMPLETED' then '#9E9E9E'
+                        when 'CANCELLED' then '#F44336'
+                        else '#9E9E9E'
+                    end as status_color,
+                    p.priority,
+                    case p.priority
+                        when 'LOW'      then '#8BC34A'
+                        when 'MEDIUM'   then '#03A9F4'
+                        when 'HIGH'     then '#FF9800'
+                        when 'CRITICAL' then '#F44336'
+                        else '#9E9E9E'
+                    end as priority_color,
+                    p.pct_complete,
+                    count(t.task_id) as total_tasks,
+                    sum(case when t.status = 'BLOCKED' then 1 else 0 end) as blocked_tasks,
+                    case when sum(case when t.status = 'BLOCKED' then 1 else 0 end) > 0
+                         then '#F44336' else '#4CAF50' end as blocked_color,
+                    case
+                        when p.status = 'COMPLETED' then 'COMPLETE'
+                        when p.target_end_date is null then 'NO DATE'
+                        when p.target_end_date < sysdate
+                         and p.status not in ('COMPLETED','CANCELLED') then 'AT RISK'
+                        when p.target_end_date < sysdate + 7
+                         and p.status not in ('COMPLETED','CANCELLED') then 'WARNING'
+                        else 'ON TRACK'
+                    end as schedule_health,
+                    case
+                        when p.status = 'COMPLETED' then '#9E9E9E'
+                        when p.target_end_date is null then '#9E9E9E'
+                        when p.target_end_date < sysdate
+                         and p.status not in ('COMPLETED','CANCELLED') then '#F44336'
+                        when p.target_end_date < sysdate + 7
+                         and p.status not in ('COMPLETED','CANCELLED') then '#FF9800'
+                        else '#4CAF50'
+                    end as health_color,
+                    trunc(p.target_end_date - sysdate) as days_remaining,
+                    p.project_id
+                from pt_projects p
+                join pt_team_members m on p.owner_id = m.member_id
+                left join pt_tasks t on p.project_id = t.project_id
+                where p.is_archived = 'N'
+                group by p.project_id, p.project_code, p.project_name,
+                         m.first_name, m.last_name, p.status, p.priority,
+                         p.pct_complete, p.target_end_date
+                order by p.project_code
+                ```
+        }
+        layout {
+            sequence: 30
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 10
+                items: {
+                    P10_PROJECT_ID: #PROJECT_ID#
+                }
+                clearCache: 10
+            }
+            linkIcon: <span role="img" aria-label="Edit" class="fa fa-edit" title="Edit"></span>
+        }
+        performance {
+            maxRowsToProcess: 1000
+        }
+        messages {
+            whenNoDataFound: No projects found.
+        }
+        componentAdvanced {
+            maxRowsPerPageInSelector: 25
+        }
+        advanced {
+            savedReportMappingIdentifier: 10099
+        }
+
+        column PROJECT_ID (
+            type: hidden
+            heading {
+                heading: Project Id
+            }
+            layout {
+                sequence: 0
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column PROJECT_CODE (
+            type: plainText
+            heading {
+                heading: Code
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column PROJECT_NAME (
+            type: plainText
+            heading {
+                heading: Project
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column OWNER_NAME (
+            type: plainText
+            heading {
+                heading: Owner
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+                alignment: center
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#STATUS_COLOR#">#STATUS#</span>
+            }
+        )
+
+        column STATUS_COLOR (
+            type: hidden
+            heading {
+                heading: Status Color
+            }
+            layout {
+                sequence: 41
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column PRIORITY (
+            type: plainText
+            heading {
+                heading: Priority
+                alignment: center
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#PRIORITY_COLOR#">#PRIORITY#</span>
+            }
+        )
+
+        column PRIORITY_COLOR (
+            type: hidden
+            heading {
+                heading: Priority Color
+            }
+            layout {
+                sequence: 51
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column PCT_COMPLETE (
+            type: plainText
+            heading {
+                heading: Progress
+                alignment: center
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: NUMBER
+            }
+            columnFormatting {
+                htmlExpression: <div style="background:#e8e8e8;border-radius:10px;height:8px;width:110px;margin:4px auto"><div style="background:#0066CC;height:8px;border-radius:10px;width:#PCT_COMPLETE#%"></div></div><div style="text-align:center;font-size:11px;color:#555;margin-top:2px">#PCT_COMPLETE#%</div>
+            }
+        )
+
+        column TOTAL_TASKS (
+            type: plainText
+            heading {
+                heading: Tasks
+                alignment: center
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column BLOCKED_TASKS (
+            type: plainText
+            heading {
+                heading: Blocked
+                alignment: center
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: NUMBER
+            }
+            columnFormatting {
+                htmlExpression: <span style="font-weight:700;color:#BLOCKED_COLOR#">#BLOCKED_TASKS#</span>
+            }
+        )
+
+        column BLOCKED_COLOR (
+            type: hidden
+            heading {
+                heading: Blocked Color
+            }
+            layout {
+                sequence: 81
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column SCHEDULE_HEALTH (
+            type: plainText
+            heading {
+                heading: Health
+                alignment: center
+            }
+            layout {
+                sequence: 90
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#HEALTH_COLOR#">#SCHEDULE_HEALTH#</span>
+            }
+        )
+
+        column HEALTH_COLOR (
+            type: hidden
+            heading {
+                heading: Health Color
+            }
+            layout {
+                sequence: 91
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column DAYS_REMAINING (
+            type: plainText
+            heading {
+                heading: Days Left
+                alignment: center
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @projects-overview
+        }
+
+        action refresh-projects-overview (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @projects-overview
+            }
+            execution {
+                sequence: 10
+                event: @refresh-on-edit
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

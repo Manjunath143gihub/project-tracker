@@ -1,0 +1,150 @@
+lov project-status-lov (
+    name: PROJECT_STATUS_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select display_value, lookup_code
+              from pt_lookup_codes
+             where lookup_type = 'PROJECT_STATUS'
+               and is_active = 'Y'
+             order by sort_order
+            ```
+    }
+    columnMapping {
+        return: LOOKUP_CODE
+        display: DISPLAY_VALUE
+    }
+)
+
+lov task-status-lov (
+    name: TASK_STATUS_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select display_value, lookup_code
+              from pt_lookup_codes
+             where lookup_type = 'TASK_STATUS'
+               and is_active = 'Y'
+             order by sort_order
+            ```
+    }
+    columnMapping {
+        return: LOOKUP_CODE
+        display: DISPLAY_VALUE
+    }
+)
+
+lov priority-lov (
+    name: PRIORITY_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select display_value, lookup_code
+              from pt_lookup_codes
+             where lookup_type = 'PRIORITY'
+               and is_active = 'Y'
+             order by sort_order
+            ```
+    }
+    columnMapping {
+        return: LOOKUP_CODE
+        display: DISPLAY_VALUE
+    }
+)
+
+lov task-type-lov (
+    name: TASK_TYPE_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select display_value, lookup_code
+              from pt_lookup_codes
+             where lookup_type = 'TASK_TYPE'
+               and is_active = 'Y'
+             order by sort_order
+            ```
+    }
+    columnMapping {
+        return: LOOKUP_CODE
+        display: DISPLAY_VALUE
+    }
+)
+
+lov team-members-lov (
+    name: TEAM_MEMBERS_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select first_name || ' ' || last_name as member_name, member_id
+              from pt_team_members
+             where is_active = 'Y'
+             order by last_name, first_name
+            ```
+    }
+    columnMapping {
+        return: MEMBER_ID
+        display: MEMBER_NAME
+    }
+)
+
+lov projects-lov (
+    name: PROJECTS_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select project_code || ' - ' || project_name as project_display, project_id
+              from pt_projects
+             where is_archived = 'N'
+             order by project_code
+            ```
+    }
+    columnMapping {
+        return: PROJECT_ID
+        display: PROJECT_DISPLAY
+    }
+)
+
+lov milestones-lov (
+    name: MILESTONES_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select m.milestone_name || ' (' || p.project_code || ')' as milestone_display,
+                   m.milestone_id
+              from pt_milestones m
+              join pt_projects p on m.project_id = p.project_id
+             where p.is_archived = 'N'
+             order by p.project_code, m.milestone_name
+            ```
+    }
+    columnMapping {
+        return: MILESTONE_ID
+        display: MILESTONE_DISPLAY
+    }
+)
+
+lov milestone-status-lov (
+    name: MILESTONE_STATUS_LOV
+    source {
+        type: sqlQuery
+        sqlQuery:
+            ```sql
+            select display_value, lookup_code
+              from pt_lookup_codes
+             where lookup_type = 'PROJECT_STATUS'
+               and is_active = 'Y'
+             order by sort_order
+            ```
+    }
+    columnMapping {
+        return: LOOKUP_CODE
+        display: DISPLAY_VALUE
+    }
+)

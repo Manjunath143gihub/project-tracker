@@ -1,0 +1,4 @@
+*.log
+*.spool
+Thumbs.db
+.DS_Store

@@ -1,0 +1,9 @@
+authentication application-express-authentication (
+    name: Application Express Authentication
+    type: noAuth
+    sessionSharing {
+        type: custom
+        cookieName: ORA_WWV_APP_100
+    }
+)
+

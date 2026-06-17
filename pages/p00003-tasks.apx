@@ -1,0 +1,387 @@
+page 3 (
+    name: Tasks
+    alias: TASKS
+    title: Tasks
+    appearance {
+        pageTemplate: @/standard
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        formAutoComplete: false
+    }
+    css {
+        inline: `.t-Header-logo-link::after{content:"Project Tracker";font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.5px;vertical-align:middle;padding-left:4px}`
+    }
+
+    region Tasks (
+        name: Tasks
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region tasks-calendar (
+        name: Task Calendar
+        type: calendar
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select t.task_id,
+                       t.task_name || ' [' || p.project_code || ']' as task_name,
+                       t.due_date,
+                       t.due_date as end_date,
+                       t.status
+                from pt_tasks t
+                join pt_projects p on t.project_id = p.project_id
+                where p.is_archived = 'N'
+                  and t.due_date is not null
+                order by t.due_date
+                ```
+        }
+        layout {
+            sequence: 18
+            slot: body
+            startNewRow: true
+        }
+        appearance {
+            template: @/standard
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            startDateColumn: DUE_DATE
+            endDateColumn: END_DATE
+            displayColumn: TASK_NAME
+        }
+    )
+
+    region tasks (
+        name: Tasks
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    p.project_code,
+                    t.task_name,
+                    t.status,
+                    case t.status
+                        when 'TODO'        then '#9E9E9E'
+                        when 'IN_PROGRESS' then '#2196F3'
+                        when 'BLOCKED'     then '#F44336'
+                        when 'IN_REVIEW'   then '#FF9800'
+                        when 'COMPLETED'   then '#4CAF50'
+                        when 'CANCELLED'   then '#607D8B'
+                        else '#9E9E9E'
+                    end as status_color,
+                    t.priority,
+                    case t.priority
+                        when 'LOW'      then '#8BC34A'
+                        when 'MEDIUM'   then '#03A9F4'
+                        when 'HIGH'     then '#FF9800'
+                        when 'CRITICAL' then '#F44336'
+                        else '#9E9E9E'
+                    end as priority_color,
+                    (select listagg(tm.first_name || ' ' || tm.last_name, ', ')
+                                   within group (order by tm.last_name)
+                       from pt_assignments a
+                       join pt_team_members tm on a.member_id = tm.member_id
+                      where a.task_id = t.task_id
+                        and a.is_active = 'Y') as assignee_names,
+                    t.due_date,
+                    case
+                        when t.due_date < sysdate
+                         and t.status not in ('COMPLETED','CANCELLED') then 'OVERDUE'
+                        else null
+                    end as is_overdue,
+                    t.pct_complete,
+                    t.task_id,
+                    t.project_id
+                from pt_tasks t
+                join pt_projects p on t.project_id = p.project_id
+                where p.is_archived = 'N'
+                order by t.due_date nulls last, p.project_code, t.task_name
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 11
+                items: {
+                    P11_TASK_ID: #TASK_ID#
+                }
+                clearCache: 11
+            }
+            linkIcon: <span role="img" aria-label="Edit" class="fa fa-edit" title="Edit"></span>
+        }
+        performance {
+            maxRowsToProcess: 1000
+        }
+        messages {
+            whenNoDataFound: No tasks found.
+        }
+        componentAdvanced {
+            maxRowsPerPageInSelector: 25
+        }
+        advanced {
+            savedReportMappingIdentifier: 30099
+        }
+
+        column TASK_ID (
+            type: hidden
+            heading {
+                heading: Task Id
+            }
+            layout {
+                sequence: 0
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column PROJECT_ID (
+            type: hidden
+            heading {
+                heading: Project Id
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column PROJECT_CODE (
+            type: plainText
+            heading {
+                heading: Project
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column TASK_NAME (
+            type: plainText
+            heading {
+                heading: Task
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#STATUS_COLOR#">#STATUS#</span>
+            }
+        )
+
+        column STATUS_COLOR (
+            type: hidden
+            heading {
+                heading: Status Color
+            }
+            layout {
+                sequence: 31
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column PRIORITY (
+            type: plainText
+            heading {
+                heading: Priority
+                alignment: center
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#PRIORITY_COLOR#">#PRIORITY#</span>
+            }
+        )
+
+        column PRIORITY_COLOR (
+            type: hidden
+            heading {
+                heading: Priority Color
+            }
+            layout {
+                sequence: 41
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column ASSIGNEE_NAMES (
+            type: plainText
+            heading {
+                heading: Assigned To
+                alignment: center
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column DUE_DATE (
+            type: plainText
+            heading {
+                heading: Due Date
+                alignment: center
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column IS_OVERDUE (
+            type: plainText
+            heading {
+                heading: Overdue
+                alignment: center
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#F44336">#IS_OVERDUE#</span>
+            }
+        )
+
+        column PCT_COMPLETE (
+            type: plainText
+            heading {
+                heading: Progress
+                alignment: center
+            }
+            layout {
+                sequence: 80
+            }
+            source {
+                dataType: NUMBER
+            }
+            columnFormatting {
+                htmlExpression: <div style="background:#e8e8e8;border-radius:10px;height:8px;width:110px;margin:4px auto"><div style="background:#0066CC;height:8px;border-radius:10px;width:#PCT_COMPLETE#%"></div></div><div style="text-align:center;font-size:11px;color:#555;margin-top:2px">#PCT_COMPLETE#%</div>
+            }
+        )
+
+    )
+
+    button create-task (
+        buttonName: CREATE_TASK
+        label: Create Task
+        layout {
+            sequence: 10
+            region: @tasks
+            slot: RIGHT_OF_IR_SEARCH_BAR
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 11
+                clearCache: 11
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @tasks
+        }
+
+        action refresh-tasks (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @tasks
+            }
+            execution {
+                sequence: 10
+                event: @refresh-on-edit
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

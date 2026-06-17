@@ -1,0 +1,64 @@
+app PROJECT-TRACKER (
+    name: Project Tracker
+    navigation {
+        homeUrl: {
+            page: 1
+        }
+        loginUrl: {
+            page: 9999
+        }
+    }
+    navigationMenu {
+        list: @navigation-menu
+        listTemplate: @/side-navigation-menu
+        templateOptions: [
+            #DEFAULT#
+        ]
+    }
+    navigationBar {
+        list: @navigation-bar
+        listTemplate: @/navigation-bar
+        templateOptions: #DEFAULT#
+    }
+    userInterface {
+        currentTheme: @universal-theme
+    }
+    appFormatMasks {
+        date: DD-MON-YYYY
+        dateTime: DD-MON-YYYY HH24:MI
+        timestamp: DD-MON-YYYY HH24:MI:SS
+        timestampTimeZone: DD-MON-YYYY HH24:MI:SSXFF TZR
+    }
+    authentication {
+        scheme: @application-express-authentication
+    }
+    security {
+        deepLinking: true
+    }
+    sessionStateProtection {
+        allowUrlsCreatedAfter: 2026-06-10T16:11:03
+        bookmarkHashFunction: md5
+    }
+    globalization {
+        documentDirection: leftToRight
+        languageDerivedFrom: browserPreference
+    }
+    progressiveWebApp {
+        enable: false
+    }
+    runtime {
+        friendlyUrls: false
+        compatibilityMode: 4.0
+    }
+    staticFiles {
+        appFilesPath: #APEX_FILES#
+    }
+    availability {
+        status: available
+    }
+    advanced {
+        exactSubstitutions: false
+        modernizeApp: true
+    }
+)
+

@@ -1,0 +1,182 @@
+page 6 (
+    name: Activity Log
+    alias: ACTIVITY-LOG
+    title: Activity Log
+    appearance {
+        pageTemplate: @/standard
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        formAutoComplete: false
+    }
+    css {
+        inline: `.t-Header-logo-link::after{content:"Project Tracker";font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.5px;vertical-align:middle;padding-left:4px}`
+    }
+
+    region activity-log-bar (
+        name: Activity Log
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region activity-log (
+        name: Activity Log
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    sh.entity_type,
+                    case sh.entity_type
+                        when 'PROJECT'   then (select p.project_name  from pt_projects  p  where p.project_id   = sh.entity_id)
+                        when 'TASK'      then (select t.task_name     from pt_tasks     t  where t.task_id      = sh.entity_id)
+                        when 'MILESTONE' then (select m.milestone_name from pt_milestones m where m.milestone_id = sh.entity_id)
+                        else to_char(sh.entity_id)
+                    end as entity_name,
+                    sh.old_status,
+                    sh.new_status,
+                    sh.changed_by as changed_by_name,
+                    sh.changed_on
+                from pt_status_history sh
+                order by sh.changed_on desc
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        performance {
+            maxRowsToProcess: 1000
+        }
+        messages {
+            whenNoDataFound: No activity found.
+        }
+        componentAdvanced {
+            maxRowsPerPageInSelector: 25
+        }
+        advanced {
+            savedReportMappingIdentifier: 60011
+        }
+
+        column ENTITY_TYPE (
+            type: plainText
+            heading {
+                heading: Type
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;background:#E3F2FD;color:#1565C0">#ENTITY_TYPE#</span>
+            }
+        )
+
+        column ENTITY_NAME (
+            type: plainText
+            heading {
+                heading: Name
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column OLD_STATUS (
+            type: plainText
+            heading {
+                heading: From
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;background:#FFEBEE;color:#C62828">#OLD_STATUS#</span>
+            }
+        )
+
+        column NEW_STATUS (
+            type: plainText
+            heading {
+                heading: To
+                alignment: center
+            }
+            layout {
+                sequence: 40
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;background:#E8F5E9;color:#2E7D32">#NEW_STATUS#</span>
+            }
+        )
+
+        column CHANGED_BY_NAME (
+            type: plainText
+            heading {
+                heading: Changed By
+                alignment: center
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column CHANGED_ON (
+            type: plainText
+            heading {
+                heading: When
+                alignment: center
+            }
+            layout {
+                sequence: 60
+            }
+            appearance {
+                formatMask: DD-MON-YYYY HH24:MI
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+    )
+
+)

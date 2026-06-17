@@ -1,0 +1,333 @@
+page 4 (
+    name: Milestones
+    alias: MILESTONES
+    title: Milestone Tracker
+    appearance {
+        pageTemplate: @/standard
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+        warnOnUnsavedChanges: false
+    }
+    security {
+        formAutoComplete: false
+    }
+    css {
+        inline: `.t-Header-logo-link::after{content:"Project Tracker";font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.5px;vertical-align:middle;padding-left:4px}`
+    }
+
+    region Milestones (
+        name: Milestones
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: REGION_POSITION_01
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: #DEFAULT#
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region milestones (
+        name: Milestones
+        type: interactiveReport
+        source {
+            location: localDatabase
+            type: sqlQuery
+            sqlQuery:
+                ```sql
+                select
+                    p.project_code,
+                    ms.milestone_name,
+                    ms.status,
+                    case ms.status
+                        when 'COMPLETED'   then '#4CAF50'
+                        when 'IN_PROGRESS' then '#2196F3'
+                        when 'PLANNING'    then '#9C27B0'
+                        when 'ON_HOLD'     then '#FF9800'
+                        when 'CANCELLED'   then '#F44336'
+                        else '#9E9E9E'
+                    end as status_color,
+                    ms.due_date,
+                    case
+                        when ms.status = 'COMPLETED' then 'COMPLETE'
+                        when ms.due_date is null then 'NO DATE'
+                        when ms.due_date < sysdate
+                         and ms.status != 'COMPLETED' then 'AT RISK'
+                        when ms.due_date < sysdate + 7
+                         and ms.status != 'COMPLETED' then 'WARNING'
+                        else 'ON TRACK'
+                    end as health_indicator,
+                    case
+                        when ms.status = 'COMPLETED' then '#4CAF50'
+                        when ms.due_date is null then '#9E9E9E'
+                        when ms.due_date < sysdate
+                         and ms.status != 'COMPLETED' then '#F44336'
+                        when ms.due_date < sysdate + 7
+                         and ms.status != 'COMPLETED' then '#FF9800'
+                        else '#4CAF50'
+                    end as health_color,
+                    count(t.task_id) as total_tasks,
+                    trunc(ms.due_date - sysdate) as days_until_due,
+                    ms.milestone_id,
+                    ms.project_id
+                from pt_milestones ms
+                join pt_projects p on ms.project_id = p.project_id
+                left join pt_tasks t on ms.milestone_id = t.milestone_id
+                where p.is_archived = 'N'
+                group by ms.milestone_id, p.project_code, ms.milestone_name,
+                         ms.status, ms.due_date, ms.project_id
+                order by ms.due_date nulls last, p.project_code
+                ```
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        link {
+            linkColumn: customTarget
+            target: {
+                page: 12
+                items: {
+                    P12_MILESTONE_ID: #MILESTONE_ID#
+                }
+                clearCache: 12
+            }
+            linkIcon: <span role="img" aria-label="Edit" class="fa fa-edit" title="Edit"></span>
+        }
+        performance {
+            maxRowsToProcess: 1000
+        }
+        messages {
+            whenNoDataFound: No milestones found.
+        }
+        componentAdvanced {
+            maxRowsPerPageInSelector: 25
+        }
+        advanced {
+            savedReportMappingIdentifier: 40011
+        }
+
+        column MILESTONE_ID (
+            type: hidden
+            heading {
+                heading: Milestone Id
+            }
+            layout {
+                sequence: 0
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column PROJECT_ID (
+            type: hidden
+            heading {
+                heading: Project Id
+            }
+            layout {
+                sequence: 1
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column PROJECT_CODE (
+            type: plainText
+            heading {
+                heading: Project
+                alignment: center
+            }
+            layout {
+                sequence: 10
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column MILESTONE_NAME (
+            type: plainText
+            heading {
+                heading: Milestone
+                alignment: center
+            }
+            layout {
+                sequence: 20
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column STATUS (
+            type: plainText
+            heading {
+                heading: Status
+                alignment: center
+            }
+            layout {
+                sequence: 30
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#STATUS_COLOR#">#STATUS#</span>
+            }
+        )
+
+        column STATUS_COLOR (
+            type: hidden
+            heading {
+                heading: Status Color
+            }
+            layout {
+                sequence: 31
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column DUE_DATE (
+            type: plainText
+            heading {
+                heading: Due Date
+                alignment: center
+            }
+            layout {
+                sequence: 40
+            }
+            appearance {
+                formatMask: DD-MON-YYYY
+            }
+            source {
+                dataType: DATE
+            }
+        )
+
+        column HEALTH_INDICATOR (
+            type: plainText
+            heading {
+                heading: Health
+                alignment: center
+            }
+            layout {
+                sequence: 50
+            }
+            source {
+                dataType: STRING
+            }
+            columnFormatting {
+                htmlExpression: <span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;color:#fff;background-color:#HEALTH_COLOR#">#HEALTH_INDICATOR#</span>
+            }
+        )
+
+        column HEALTH_COLOR (
+            type: hidden
+            heading {
+                heading: Health Color
+            }
+            layout {
+                sequence: 51
+            }
+            source {
+                dataType: STRING
+            }
+        )
+
+        column TOTAL_TASKS (
+            type: plainText
+            heading {
+                heading: Tasks
+                alignment: center
+            }
+            layout {
+                sequence: 60
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+        column DAYS_UNTIL_DUE (
+            type: plainText
+            heading {
+                heading: Days Left
+                alignment: center
+            }
+            layout {
+                sequence: 70
+            }
+            source {
+                dataType: NUMBER
+            }
+        )
+
+    )
+
+    button create-milestone (
+        buttonName: CREATE_MILESTONE
+        label: Create Milestone
+        layout {
+            sequence: 10
+            region: @milestones
+            slot: RIGHT_OF_IR_SEARCH_BAR
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: redirectThisApp
+            target: {
+                page: 12
+                clearCache: 12
+            }
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    dynamicAction refresh-on-edit (
+        name: Refresh on Edit
+        execution {
+            sequence: 10
+        }
+        when {
+            event: apexafterclosedialog
+            selectionType: region
+            region: @milestones
+        }
+
+        action refresh-milestones (
+            action: refresh
+            affectedElements {
+                selectionType: region
+                region: @milestones
+            }
+            execution {
+                sequence: 10
+                event: @refresh-on-edit
+                fireOnInit: false
+            }
+        )
+
+    )
+
+)

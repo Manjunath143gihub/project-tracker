@@ -1,0 +1,453 @@
+page 13 (
+    name: Team Member Form
+    alias: TEAM-MEMBER-FORM
+    title: Team Member
+    appearance {
+        pageMode: modalDialog
+        dialogTemplate: @/drawer
+        templateOptions: [
+            #DEFAULT#
+            js-dialog-class-t-Drawer--pullOutEnd
+        ]
+    }
+    dialog {
+        chained: false
+    }
+    navigation {
+        cursorFocus: firstItemOnPage
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region buttons (
+        name: Buttons
+        type: staticContent
+        layout {
+            sequence: 20
+            slot: REGION_POSITION_03
+        }
+        appearance {
+            template: @/buttons-container
+            templateOptions: #DEFAULT#
+        }
+        settings {
+            outputAs: text
+        }
+    )
+
+    region team-member-form (
+        name: Team Member
+        type: form
+        source {
+            location: localDatabase
+            tableName: PT_TEAM_MEMBERS
+        }
+        layout {
+            sequence: 10
+            slot: contentBody
+        }
+        appearance {
+            template: @/blank-with-attributes
+            templateOptions: #DEFAULT#
+        }
+        edit {
+            enabled: true
+        }
+    )
+
+    pageItem P13_MEMBER_ID (
+        type: hidden
+        layout {
+            sequence: 10
+            region: @team-member-form
+            slot: regionBody
+        }
+        source {
+            formRegion: @team-member-form
+            column: MEMBER_ID
+            dataType: number
+            queryOnly: true
+            primaryKey: true
+        }
+        security {
+            sessionStateProtection: checksumRequiredSessionLevel
+        }
+    )
+
+    pageItem P13_SUCCESS_MESSAGE (
+        type: hidden
+        layout {
+            sequence: 11
+            region: @team-member-form
+            slot: regionBody
+        }
+    )
+
+    pageItem P13_FIRST_NAME (
+        type: textField
+        label {
+            label: First Name
+            alignment: left
+        }
+        layout {
+            sequence: 20
+            region: @team-member-form
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 40
+        }
+        validation {
+            valueRequired: true
+            maxLength: 100
+        }
+        source {
+            formRegion: @team-member-form
+            column: FIRST_NAME
+            dataType: varchar2
+        }
+    )
+
+    pageItem P13_LAST_NAME (
+        type: textField
+        label {
+            label: Last Name
+            alignment: left
+        }
+        layout {
+            sequence: 30
+            region: @team-member-form
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 40
+        }
+        validation {
+            valueRequired: true
+            maxLength: 100
+        }
+        source {
+            formRegion: @team-member-form
+            column: LAST_NAME
+            dataType: varchar2
+        }
+    )
+
+    pageItem P13_EMAIL (
+        type: textField
+        label {
+            label: Email
+            alignment: left
+        }
+        layout {
+            sequence: 40
+            region: @team-member-form
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            width: 60
+        }
+        validation {
+            valueRequired: true
+            maxLength: 200
+        }
+        source {
+            formRegion: @team-member-form
+            column: EMAIL
+            dataType: varchar2
+        }
+    )
+
+    pageItem P13_JOB_TITLE (
+        type: textField
+        label {
+            label: Job Title
+            alignment: left
+        }
+        layout {
+            sequence: 50
+            region: @team-member-form
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 60
+        }
+        validation {
+            maxLength: 200
+        }
+        source {
+            formRegion: @team-member-form
+            column: JOB_TITLE
+            dataType: varchar2
+        }
+    )
+
+    pageItem P13_DEPARTMENT (
+        type: textField
+        label {
+            label: Department
+            alignment: left
+        }
+        layout {
+            sequence: 60
+            region: @team-member-form
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 40
+        }
+        validation {
+            maxLength: 100
+        }
+        source {
+            formRegion: @team-member-form
+            column: DEPARTMENT
+            dataType: varchar2
+        }
+    )
+
+    pageItem P13_APEX_USERNAME (
+        type: textField
+        label {
+            label: APEX Username
+            alignment: left
+        }
+        layout {
+            sequence: 70
+            region: @team-member-form
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional-floating
+            templateOptions: #DEFAULT#
+            width: 40
+        }
+        validation {
+            maxLength: 100
+        }
+        source {
+            formRegion: @team-member-form
+            column: APEX_USERNAME
+            dataType: varchar2
+        }
+    )
+
+    pageItem P13_IS_ACTIVE (
+        type: selectList
+        label {
+            label: Active
+            alignment: left
+        }
+        lov {
+            type: staticValues
+            staticValues: STATIC:Yes;Y,No;N
+            displayNullValue: false
+        }
+        layout {
+            sequence: 80
+            region: @team-member-form
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/required-floating
+            templateOptions: #DEFAULT#
+            height: 1
+        }
+        source {
+            formRegion: @team-member-form
+            column: IS_ACTIVE
+            dataType: varchar2
+        }
+    )
+
+    button cancel (
+        buttonName: CANCEL
+        label: Cancel
+        layout {
+            sequence: 10
+            region: @buttons
+            slot: CLOSE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            action: definedByDynamicAction
+        }
+    )
+
+    button delete (
+        buttonName: DELETE
+        label: Delete
+        layout {
+            sequence: 20
+            region: @buttons
+            slot: DELETE
+        }
+        appearance {
+            buttonTemplate: @/text
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            executeValidations: false
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: delete
+            requiresConfirmation: true
+        }
+        confirmation {
+            message: &APP_TEXT$DELETE_MSG!RAW.
+            style: danger
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P13_MEMBER_ID
+        }
+    )
+
+    button create (
+        buttonName: CREATE
+        label: Create
+        layout {
+            sequence: 30
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: insert
+        }
+        serverSideCondition {
+            type: itemIsNull
+            item: P13_MEMBER_ID
+        }
+    )
+
+    button apply-changes (
+        buttonName: APPLY-CHANGES
+        label: Apply Changes
+        layout {
+            sequence: 40
+            region: @buttons
+            slot: NEXT
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+            databaseAction: update
+        }
+        serverSideCondition {
+            type: itemIsNotNull
+            item: P13_MEMBER_ID
+        }
+    )
+
+    dynamicAction cancel-dialog (
+        name: Cancel Dialog
+        execution {
+            sequence: 10
+        }
+        when {
+            event: click
+            selectionType: button
+            button: @cancel
+        }
+
+        action native-dialog-cancel (
+            action: cancelDialog
+            execution {
+                sequence: 10
+                event: @cancel-dialog
+                fireOnInit: false
+            }
+        )
+
+    )
+
+    process set-success-message (
+        name: Set Success Message
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                :P13_SUCCESS_MESSAGE :=
+                    case :REQUEST
+                        when 'CREATE'        then 'Team member created successfully.'
+                        when 'APPLY-CHANGES' then 'Team member updated successfully.'
+                        when 'DELETE'        then 'Team member deleted successfully.'
+                        else null
+                    end;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,APPLY-CHANGES,DELETE
+        }
+    )
+
+    process initialize-form-team-member-form (
+        name: Initialize form Team Member Form
+        type: formInitialization
+        formRegion: @team-member-form
+        execution {
+            sequence: 10
+            point: beforeHeader
+        }
+    )
+
+    process process-form-team-member-form (
+        name: Process form Team Member Form
+        type: formAutoRowProcessing
+        formRegion: @team-member-form
+        execution {
+            sequence: 10
+        }
+        successMessage {
+            successMessage: &P13_SUCCESS_MESSAGE.
+        }
+    )
+
+    process close-dialog (
+        name: Close Dialog
+        type: closeDialog
+        execution {
+            sequence: 50
+        }
+        serverSideCondition {
+            type: requestIsContainedInValue
+            value: CREATE,APPLY-CHANGES,DELETE
+        }
+    )
+
+)
